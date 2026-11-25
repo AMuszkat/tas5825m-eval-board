@@ -1,0 +1,13 @@
+# --- KiCad working files ---
+*.kicad_prl
+fp-info-cache
+_autosave-*
+*-backups/
+*.bak
+*-bak
+*.lck
+~*.lck
+
+# --- OS ---
+.DS_Store
+Thumbs.db
