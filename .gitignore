@@ -8,6 +8,10 @@ _autosave-*
 *.lck
 ~*.lck
 
+# --- Konnect / Claude local state ---
+.konnect/
+.claude/settings.local.json
+
 # --- OS ---
 .DS_Store
 Thumbs.db
