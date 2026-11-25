@@ -93,6 +93,61 @@ A row of caps whose Values/tolerances overlap, wires intact:
    re-wire; keep 1.27 mm.
 5. Verify with the `schematic-verify` skill.
 
+## Gotchas learned on this project
+
+Hard-won, verified against these sheets — read before running a pass.
+
+### `reset_schematic_field_positions` touches power symbols
+
+Omit `references` and it resets **every** symbol, including the `#PWR…` power
+symbols. Their Reference/Value normally sit *inside* the symbol graphic
+(effectively invisible); the reset moves them *outside*, so the sheet suddenly
+shows a small `GND` / `AGND` / `#PWR00011` next to every ground and rail. This
+is a visible regression.
+
+**Always pass an explicit `references` list of real components** (everything not
+starting with `#PWR`). Get the list from `list_schematic_components`:
+
+```jsonc
+{"tool":"reset_schematic_field_positions",
+ "args":{"schematic":"…","references":["U2","Cdig","Cgvdd", /* … */]}}
+```
+
+### It rewrites symbol instances (large, lossy-looking diff)
+
+The rewrite drops `(body_style N)` and `(in_pos_files yes)` from each instance.
+KiCad re-defaults them on load and the design is unaffected (exports, ERC and
+connectivity are unchanged), but `git diff` shows thousands of lines — do not
+read it as damage, and never hand-edit `.kicad_sch` to "restore" them.
+
+### Field text inherits the symbol's rotation
+
+Reset anchors Reference/Value along the symbol's own axis. On a 90°-rotated part
+(most vertical capacitors here) the ref/value come out **vertical**. That is
+collision-free but reads bottom-to-top; on some sheets it is a wash. There is no
+tool to set a field's position to an arbitrary horizontal spot — reset is the
+only lever, so accept the rotation or restructure the sheet.
+
+### Clutter reset cannot fix
+
+- Pin **name** text colliding because two pins are adjacent on a small symbol
+  body (e.g. the LPC11U68 and TAS5825M pin fans) — a symbol-library geometry
+  problem, not a field-position one.
+- A symbol's Value and a custom field both anchored at the same place
+  (e.g. `SW_MCU_RESET` shows `B3S-1000` over `Cap`).
+- Extra visible custom fields (`X7R`, `50V`, `0402`, `1%`) — these are *useful*
+  info; the goal is to space them, not hide them.
+
+## Baseline numbers for this project (do not regress these)
+
+Measured before any cleanup; a readability pass must not make them worse.
+
+| Check | root | AMP_CH1 | MCU |
+|---|---|---|---|
+| `check_schematic_overlaps` (symbol level) | 4 | 21 | 0 |
+| `find_orphan_items` | 0 | 2 dangling wire ends | 1 unconnected pin (`ULDO` pin 4, NC) |
+| `run_erc` (on the root) | 13 errors, 435 total | — (hierarchy-wide) | — |
+
 ## Worked pattern — labels across pin names
 
 1. `get_schematic_pin_locations { reference }` → read `orientation_degrees`.

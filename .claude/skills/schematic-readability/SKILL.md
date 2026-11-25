@@ -75,12 +75,17 @@ Ref/Value/field text a previous editor dragged off the library anchor is the
 usual cause of piled-up strings — and the MCU sheet's whole problem.
 
 ```
-reset_schematic_field_positions { schematic, dry_run: true }        # preview
-reset_schematic_field_positions { schematic }                        # apply
+reset_schematic_field_positions { schematic, references: [...], dry_run: true }  # preview
+reset_schematic_field_positions { schematic, references: [...] }                  # apply
 ```
-Omit `references` to do the whole sheet, or pass a list to work in batches.
-Fields a symbol's library gives no anchor for are left alone. Re-render and
-look; a handful of parts will still need attention.
+**Pass an explicit `references` list of real components — do not omit it.** With
+`references` omitted the tool also resets the `#PWR…` power symbols, whose
+Reference/Value sit inside the graphic (invisible); moving them outside floods
+the sheet with `GND`/`#PWR…` text. Get the list from
+`list_schematic_components` and keep everything that does not start with `#PWR`.
+Fields a symbol's library gives no anchor for are left alone. Re-render and look;
+a handful of parts will still need attention. See
+`references/overlap-toolkit.md` for the rotation side effect.
 
 ### 2.2 Move labels (non-destructive)
 

@@ -58,6 +58,10 @@ Measured starting point (Konnect `check_schematic_overlaps`, symbol-body level):
 4. Never move a **wired** symbol casually: `move_schematic_component` moves the
    symbol and leaves its wires behind. Prefer field/label moves, or re-verify
    connectivity afterwards.
+5. Run ERC on the **root** schematic only — `run_erc` rejects a sub-sheet and ERC
+   covers the whole hierarchy anyway.
+6. Undo is `git checkout -- <sheet>.kicad_sch`: the schematics are tracked, and
+   Konnect rewrites produce a huge normalized diff you should not hand-edit.
 
 ## Conventions
 

@@ -20,8 +20,18 @@ Read `.claude/CLAUDE.md`. Never edit KiCad files by hand.
 ## Load
 
 ```
-load_toolset(["sch_analysis", "sch_export"])
+load_toolset(["sch_analysis", "sch_batch", "sch_export"])
 ```
+
+`validate_wire_connections`, `fix_connectivity` and the `batch_*` tools live in
+**`sch_batch`**, not `sch_analysis` — loading the wrong one returns
+`toolset_not_loaded`.
+
+**`run_erc` runs on the project root only** — `tas5825m_eval.kicad_sch`, never a
+sub-sheet. Konnect rejects a sub-sheet with *"…is a sheet inside the project
+rooted at …"*: kicad-cli would treat it as its own root, miss `sym-lib-table`,
+and report every project-library symbol as unknown. ERC covers the whole
+hierarchy in any case.
 
 ## The five checks
 
@@ -51,9 +61,10 @@ Supporting checks when relevant:
 - **Improvement, new regression** → fix the regression in the same pass
   (`fix_connectivity`, re-wire with `connect_pins`/`connect_to_net`) before
   moving on. Do not stack a second change on an unverified one.
-- **No improvement or worse** → revert that one step
-  (`git diff` shows nothing for KiCad files — Konnect wrote them — so undo by
-  applying the inverse move, or restore the checkpoint from `snapshot_project`).
+- **No improvement or worse** → revert that one step. Every `.kicad_sch` is
+  tracked in git, so **`git checkout -- <sheet>.kicad_sch` restores the last
+  commit exactly** — that is the undo. (`git diff` on these files shows a huge,
+  serializer-normalized diff; never try to hand-pick hunks from it.)
 - **Dangling / floating after a symbol move** — expected: `move_schematic_component`
   does not stretch wires. Re-run `fix_connectivity` (it snaps near-miss
   endpoints), then re-check 2 and 3; if the gap is larger than `snap_tolerance`,
